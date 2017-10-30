@@ -252,15 +252,30 @@ function pfDatabase:SearchQuest(quest, meta)
   local maps = {}
 
   if quests[quest] then
-    for questGiver, field in pairs(quests[quest]) do
-      local objectType = field
+    if quests[quest]["start"] then
+      for questGiver, field in pairs(quests[quest]["start"]) do
+        local objectType = field
 
-      meta = meta or {}
-      meta["quest"] = quest
-      meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\quest"
+        meta = meta or {}
+        meta["quest"] = quest
+        meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\quest"
 
-      local zone, score = pfDatabase:SearchMob(questGiver, meta)
-      if zone then maps[zone] = maps[zone] and maps[zone] + score or 1 end
+        local zone, score = pfDatabase:SearchMob(questGiver, meta)
+        if zone then maps[zone] = maps[zone] and maps[zone] + score or 1 end
+      end
+    end
+
+    if quests[quest]["end"] then
+      for questGiver, field in pairs(quests[quest]["end"]) do
+        local objectType = field
+
+        meta = meta or {}
+        meta["quest"] = quest
+        meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\quest"
+
+        local zone, score = pfDatabase:SearchMob(questGiver, meta)
+        if zone then maps[zone] = maps[zone] and maps[zone] + score or 1 end
+      end
     end
 
     -- calculate best map results
@@ -286,8 +301,8 @@ function pfDatabase:SearchQuests(zone, meta)
     zone = pfMap:GetMapID(GetCurrentMapContinent(), GetCurrentMapZone())
   end
 
-  for title, questgivers in pairs(quests) do
-    for questgiver in pairs(questgivers) do
+  for title in pairs(quests) do
+    for questgiver in pairs(quests[title]["start"]) do
       if spawns[questgiver] and strfind(spawns[questgiver]["faction"], faction) then
 
         meta = meta or {}
