@@ -343,14 +343,12 @@ function pfDatabase:SearchQuests(zone, meta)
 
         if meta["allquests"] then
           meta["translucent"] = true
+          meta["vertex"] = true
+
           if pfQuest_history[title] then
             break
-          elseif quests[title]["min"] and quests[title]["min"] > level + 2 then
-            break
           elseif quests[title]["min"] and quests[title]["min"] > level then
-            meta["vertex"] = true
-          else
-            meta["vertex"] = nil
+            break
           end
         end
 
