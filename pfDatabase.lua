@@ -106,9 +106,13 @@ SlashCmdList["PFDB"] = function(input, editbox)
   end
 end
 
-function pfDatabase:HexDifficultyColor(level)
-  local c = GetDifficultyColor(level)
-  return string.format("|cff%02x%02x%02x", c.r*255, c.g*255, c.b*255)
+function pfDatabase:HexDifficultyColor(level, force)
+  if force and UnitLevel("player") < level then
+    return "|cffff5555"
+  else
+    local c = GetDifficultyColor(level)
+    return string.format("|cff%02x%02x%02x", c.r*255, c.g*255, c.b*255)
+  end
 end
 
 function pfDatabase:BuildTooltipInfo(meta)
@@ -133,7 +137,7 @@ function pfDatabase:BuildTooltipInfo(meta)
       table.insert(description, "Loot: " .. ( meta["itemlink"] or meta["item"] ) .. "|cffaaaaaa (" .. meta["droprate"] .. "%)")
     else
       if meta["qlvl"] then
-        table.insert(description, "Level: " .. pfDatabase:HexDifficultyColor(meta["qlvl"]) .. meta["qlvl"] .. "|r" .. ( meta["qmin"] and " / Required: " .. pfDatabase:HexDifficultyColor(meta["qmin"]) .. meta["qmin"] .. "|r"  or ""))
+        table.insert(description, "Level: " .. pfDatabase:HexDifficultyColor(meta["qlvl"]) .. meta["qlvl"] .. "|r" .. ( meta["qmin"] and " / Required: " .. pfDatabase:HexDifficultyColor(meta["qmin"], true) .. meta["qmin"] .. "|r"  or ""))
       end
     end
   elseif meta["sellcount"] then
