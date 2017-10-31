@@ -10,6 +10,7 @@ pfQuest_defconfig = {
   ["minimaptransp"] = "1.0",
 }
 
+pfQuest_history = {}
 pfQuest_config = {}
 
 local function LoadConfig()
@@ -167,6 +168,7 @@ local function UpdateQuestLogID(questIndex, action)
     local exists = nil
     for quest in pairs(questLogCache) do
       if not cur[quest] then
+        pfQuest_history[quest] = true
         ClearQuest(quest)
       end
     end
@@ -377,6 +379,12 @@ pfQuest:SetScript("OnUpdate", function()
     end
   end
 end)
+
+local HookAbandonQuest = AbandonQuest
+function AbandonQuest()
+  pfQuest_history[GetAbandonQuestName()] = nil
+  HookAbandonQuest()
+end
 
 -- questlink integration
 local pfHookQuestLogTitleButton_OnClick = QuestLogTitleButton_OnClick
