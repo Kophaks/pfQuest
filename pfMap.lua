@@ -198,15 +198,23 @@ function pfMap:AddNode(addon, map, coords, icon, title, description, translucent
 
     -- extend current description
     table.insert(pfMap.nodes[addon][map][coords].description, "\n|cff33ffcc" ..  title .. "|r")
-    for id,data in pairs(description) do
-      table.insert(pfMap.nodes[addon][map][coords].description, data)
-    end
+    table.insert(pfMap.nodes[addon][map][coords].description, description[2])
 
     -- prioritize symbols of empties and plain colors over custom
-    if not vertex or not pfMap.nodes[addon][map][coords].icon or
-    ( vertex[1] == 0 and vertex[2] == 0 and vertex[3] == 0 ) then
-      pfMap.nodes[addon][map][coords].vertex = vertex
-      pfMap.nodes[addon][map][coords].icon = icon
+    if pfMap.nodes[addon][map][coords].icon ~= icon then
+      if strfind(icon, "startend") then
+        pfMap.nodes[addon][map][coords].vertex = vertex
+        pfMap.nodes[addon][map][coords].icon = icon
+      elseif not strfind(pfMap.nodes[addon][map][coords].icon, "_c") and strfind(icon, "_c") then
+        pfMap.nodes[addon][map][coords].vertex = vertex
+        pfMap.nodes[addon][map][coords].icon = icon
+      elseif not strfind(pfMap.nodes[addon][map][coords].icon, "_c") and
+      not strfind(pfMap.nodes[addon][map][coords].icon, "startend") and
+      ( vertex[1] == 0 and vertex[2] == 0 and vertex[3] == 0 ) then
+        pfMap.nodes[addon][map][coords].vertex = vertex
+        pfMap.nodes[addon][map][coords].icon = icon
+        return
+      end
     end
   else
     -- create new node

@@ -345,11 +345,14 @@ function pfDatabase:SearchQuests(zone, meta)
         meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\available"
 
         if meta["allquests"] then
+          meta["addon"] = "PFQUEST"
           meta["vertex"] = { 0, 0, 0 }
 
           if pfQuest_history[title] then
             break
-          elseif quests[title]["min"] and quests[title]["min"] > level + 3 then
+          elseif quests[title]["lvl"] and quests[title]["lvl"] > level + 10 then
+            break
+          elseif quests[title]["min"] and quests[title]["min"] > level + 2 then
             break
           elseif quests[title]["min"] and quests[title]["min"] > level then
             meta["vertex"] = { 1, .6, .6 }
