@@ -1,7 +1,7 @@
 -- default config
 pfQuest_defconfig = {
-  ["trackingmethod"] = 3,
-  ["allquestgivers"] = "0",
+  ["trackingmethod"] = 1,
+  ["allquestgivers"] = "1",
   ["currentquestgivers"] = "1", -- show quest givers for active quests
   ["minimapnodes"] = "1", -- hide all minimap entries
   ["questlogbuttons"] = "1", -- shows buttons inside the questlog
@@ -86,7 +86,10 @@ local function UpdateQuestLogID(questIndex, action)
 
   -- specified index
   if questIndex then
-    local title, level = GetQuestLogTitle(questIndex)
+    --local title, level = GetQuestLogTitle(questIndex)
+    local title, level, _, header, _, complete = GetQuestLogTitle(questIndex)
+    if header then return end
+
     local watched = IsQuestWatched(questIndex)
     if not title then return end
 
@@ -140,6 +143,13 @@ local function UpdateQuestLogID(questIndex, action)
 
     -- show quest givers
     if pfQuest_config["currentquestgivers"] ==  "1" then
+
+      if complete then
+        meta.qstate = "done"
+      else
+        meta.qstate = "progress"
+      end
+
       zone, score = pfDatabase:SearchQuest(title, meta)
       if zone then maps[zone] = maps[zone] and maps[zone] + score or 1 end
     end

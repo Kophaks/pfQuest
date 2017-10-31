@@ -185,12 +185,12 @@ function pfMap:GetMapID(cid, mid)
   return pfMap:GetMapIDByName(name)
 end
 
-function pfMap:AddNode(addon, map, coords, icon, title, description, translucent, func)
+function pfMap:AddNode(addon, map, coords, icon, title, description, translucent, func, vertex)
   if not pfMap.nodes[addon] then pfMap.nodes[addon] = {} end
   if not pfMap.nodes[addon][map] then pfMap.nodes[addon][map] = {} end
 
   if not pfMap.nodes[addon][map][coords] then
-    pfMap.nodes[addon][map][coords] = { icon = icon, title = title, description = description, addon = addon, translucent = translucent, func = func}
+    pfMap.nodes[addon][map][coords] = { icon = icon, title = title, description = description, addon = addon, translucent = translucent, func = func, vertex = vertex }
   end
 end
 
@@ -243,6 +243,12 @@ function pfMap:UpdateNode(frame, node)
     frame.tex:SetTexture("Interface\\AddOns\\pfQuest\\img\\node")
     local r,g,b = str2rgb(node.title)
     frame.tex:SetVertexColor(r,g,b,1)
+  end
+
+  if node.icon and node.vertex then
+    frame.tex:SetDesaturated(true)
+  else
+    frame.tex:SetDesaturated(false)
   end
 
   if node.func then

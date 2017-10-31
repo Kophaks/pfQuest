@@ -106,6 +106,11 @@ SlashCmdList["PFDB"] = function(input, editbox)
   end
 end
 
+function pfDatabase:HexDifficultyColor(level)
+  local c = GetDifficultyColor(level)
+  return string.format("|cff%02x%02x%02x", c.r*255, c.g*255, c.b*255)
+end
+
 function pfDatabase:BuildTooltipInfo(meta)
   local title, description = nil, {}
 
@@ -126,6 +131,10 @@ function pfDatabase:BuildTooltipInfo(meta)
     table.insert(description, meta["spawntype"] .. ": " .. meta["spawn"] .. "|cffaaaaaa (" .. meta["x"] .. "," .. meta["y"] .. ")")
     if meta["item"] and meta["droprate"] then
       table.insert(description, "Loot: " .. ( meta["itemlink"] or meta["item"] ) .. "|cffaaaaaa (" .. meta["droprate"] .. "%)")
+    else
+      if meta["qlvl"] then
+        table.insert(description, "Level: " .. pfDatabase:HexDifficultyColor(meta["qlvl"]) .. meta["qlvl"] .. "|r" .. ( meta["qmin"] and " / Required: " .. pfDatabase:HexDifficultyColor(meta["qmin"]) .. meta["qmin"] .. "|r"  or ""))
+      end
     end
   elseif meta["sellcount"] then
     title = meta["item"]
@@ -166,7 +175,7 @@ function pfDatabase:SearchMob(mob, meta)
       if pfMap:IsValidMap(zone) and zone > 0 then
         maps[zone] = maps[zone] and maps[zone] + 1 or 1
         local title, description = pfDatabase:BuildTooltipInfo(meta)
-        pfMap:AddNode(meta["addon"] or "PFDB", zone, x .. "|" .. y, meta["texture"], title, description, meta["translucent"], func)
+        pfMap:AddNode(meta["addon"] or "PFDB", zone, x .. "|" .. y, meta["texture"], title, description, meta["translucent"], func, meta["vertex"])
       end
     end
 
@@ -258,7 +267,16 @@ function pfDatabase:SearchQuest(quest, meta)
 
         meta = meta or {}
         meta["quest"] = quest
-        meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\quest"
+
+        if quests[quest]["end"][questGiver] then
+          if meta["qstate"] == "progress" then
+            meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\startendstart"
+          else
+            meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\startend"
+          end
+        else
+          meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\available"
+        end
 
         local zone, score = pfDatabase:SearchMob(questGiver, meta)
         if zone then maps[zone] = maps[zone] and maps[zone] + score or 1 end
@@ -271,7 +289,17 @@ function pfDatabase:SearchQuest(quest, meta)
 
         meta = meta or {}
         meta["quest"] = quest
-        meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\quest"
+
+        if quests[quest]["start"][questGiver] then
+          if meta["qstate"] == "progress" then
+            meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\startendstart"
+          else
+            meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\startend"
+          end
+        else
+          if meta["qstate"] == "progress" then meta["vertex"] = true else meta["vertex"] = nil end
+          meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\complete"
+        end
 
         local zone, score = pfDatabase:SearchMob(questGiver, meta)
         if zone then maps[zone] = maps[zone] and maps[zone] + score or 1 end
@@ -295,6 +323,7 @@ end
 
 function pfDatabase:SearchQuests(zone, meta)
   local faction = ( UnitFactionGroup("player") == "Horde" ) and "H" or "A"
+  local level = UnitLevel("player")
 
   zone = pfMap:GetMapIDByName(zone)
   if not pfMap:IsValidMap(zone) then
@@ -307,10 +336,22 @@ function pfDatabase:SearchQuests(zone, meta)
 
         meta = meta or {}
         meta["quest"] = title
+        meta["qlvl"] = quests[title]["lvl"]
+        meta["qmin"] = quests[title]["min"]
+
         meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\available"
 
         if meta["allquests"] then
           meta["translucent"] = true
+          if pfQuest_history[title] then
+            break
+          elseif quests[title]["min"] and quests[title]["min"] > level + 2 then
+            break
+          elseif quests[title]["min"] and quests[title]["min"] > level then
+            meta["vertex"] = true
+          else
+            meta["vertex"] = nil
+          end
         end
 
         if tonumber(spawns[questgiver]["zone"]) == zone or meta["allquests"] then
