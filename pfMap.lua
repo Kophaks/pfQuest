@@ -189,8 +189,36 @@ function pfMap:AddNode(addon, map, coords, icon, title, description, translucent
   if not pfMap.nodes[addon] then pfMap.nodes[addon] = {} end
   if not pfMap.nodes[addon][map] then pfMap.nodes[addon][map] = {} end
 
-  if not pfMap.nodes[addon][map][coords] then
-    pfMap.nodes[addon][map][coords] = { icon = icon, title = title, description = description, addon = addon, translucent = translucent, func = func, vertex = vertex }
+  if pfMap.nodes[addon][map][coords] then
+    -- return early on already added nodes
+    if pfMap.nodes[addon][map][coords].title == title then return end
+    for id,data in pairs(pfMap.nodes[addon][map][coords].description) do
+      if strfind(data, title) then return end
+    end
+
+    -- extend current description
+    table.insert(pfMap.nodes[addon][map][coords].description, "\n|cff33ffcc" ..  title .. "|r")
+    for id,data in pairs(description) do
+      table.insert(pfMap.nodes[addon][map][coords].description, data)
+    end
+
+    -- prioritize symbols of empties and plain colors over custom
+    if not vertex or not pfMap.nodes[addon][map][coords].icon or
+    ( vertex[1] == 0 and vertex[2] == 0 and vertex[3] == 0 ) then
+      pfMap.nodes[addon][map][coords].vertex = vertex
+      pfMap.nodes[addon][map][coords].icon = icon
+    end
+  else
+    -- create new node
+    pfMap.nodes[addon][map][coords] = {
+      icon = icon,
+      title = title,
+      description = description,
+      addon = addon,
+      translucent = translucent,
+      func = func,
+      vertex = vertex,
+    }
   end
 end
 
@@ -246,9 +274,10 @@ function pfMap:UpdateNode(frame, node)
   end
 
   if node.icon and node.vertex then
-    frame.tex:SetDesaturated(true)
-  else
-    frame.tex:SetDesaturated(false)
+    local r, g, b = unpack(node.vertex)
+    if r > 0 or g > 0 or b > 0 then
+      frame.tex:SetVertexColor(r, g, b, 1)
+    end
   end
 
   if node.func then

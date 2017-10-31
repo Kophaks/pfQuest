@@ -275,7 +275,7 @@ function pfDatabase:SearchQuest(quest, meta)
             meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\startend"
           end
         else
-          meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\available"
+          meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\available_c"
         end
 
         local zone, score = pfDatabase:SearchMob(questGiver, meta)
@@ -297,8 +297,11 @@ function pfDatabase:SearchQuest(quest, meta)
             meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\startend"
           end
         else
-          if meta["qstate"] == "progress" then meta["vertex"] = true else meta["vertex"] = nil end
-          meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\complete"
+          if meta["qstate"] == "done" then
+            meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\complete_c"
+          else
+            meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\complete"
+          end
         end
 
         local zone, score = pfDatabase:SearchMob(questGiver, meta)
@@ -342,13 +345,20 @@ function pfDatabase:SearchQuests(zone, meta)
         meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\available"
 
         if meta["allquests"] then
-          meta["translucent"] = true
-          meta["vertex"] = true
+          meta["vertex"] = { 0, 0, 0 }
 
           if pfQuest_history[title] then
             break
-          elseif quests[title]["min"] and quests[title]["min"] > level then
+          elseif quests[title]["min"] and quests[title]["min"] > level + 3 then
             break
+          elseif quests[title]["min"] and quests[title]["min"] > level then
+            meta["vertex"] = { 1, .6, .6 }
+          end
+
+          -- treat highlevel quests with low requirements as dailies
+          if quests[title]["min"] and quests[title]["lvl"] and
+          quests[title]["min"] == 1 and quests[title]["lvl"] > 50 then
+            meta["vertex"] = { .2, .8, 1 }
           end
         end
 
