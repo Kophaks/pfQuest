@@ -34,6 +34,7 @@ local env = assert (require"luasql.mysql".mysql())
 local con = assert (env:connect("elysium","mangos","mangos","127.0.0.1"))
 
 local quest_template = {}
+local quest_template_pre = {}
 local creature_questrelation = {}
 local gameobject_questrelation = {}
 local creature_involvedrelation = {}
@@ -48,8 +49,9 @@ local q1 = con:execute("select * from quest_template \
   INNER JOIN locales_quest ON quest_template.entry = locales_quest.entry")
 while q1:fetch(quest_template, "a") do
   local title = quest_template["Title_loc" .. loc_id] or quest_template.Title
-  local details = quest_template["Details_loc" .. loc_id] or quest_template.Details
   local objectives = quest_template["Objectives_loc" .. loc_id] or quest_template.Objectives
+  local details = quest_template["Details_loc" .. loc_id] or quest_template.Details
+  local title = title .. "," .. string.sub((objectives or ""), 1, 10)
 
   print("  [\"" .. sanitize(title) .. "\"] = {")
   print("    [\"id\"] = " .. quest_template.entry .. ",")
@@ -61,7 +63,6 @@ while q1:fetch(quest_template, "a") do
     print("    [\"lvl\"] = " .. quest_template.QuestLevel .. ",")
   end
 
-  --[[ maybe someday...
   if quest_template.RequiredClasses and quest_template.RequiredClasses ~= "0" then
     print("    [\"class\"] = " .. quest_template.RequiredClasses .. ",")
   end
@@ -70,14 +71,22 @@ while q1:fetch(quest_template, "a") do
     print("    [\"race\"] = " .. quest_template.RequiredRaces .. ",")
   end
 
-  if quest_template.PrevQuestId and quest_template.PrevQuestId ~= "0" then
-    print("    [\"pre\"] = " .. quest_template.PrevQuestId .. ",")
+  if quest_template.PrevQuestId and quest_template.PrevQuestId ~= "" then -- prequests
+    local prequest = con:execute("select * from quest_template \
+      INNER JOIN locales_quest ON quest_template.entry = locales_quest.entry \
+      WHERE quest_template.entry = " .. quest_template.PrevQuestId)
+
+    while prequest:fetch(quest_template_pre, "a") do
+      local title = quest_template_pre["Title_loc" .. loc_id] or quest_template_pre.Title
+      local objectives = quest_template_pre["Objectives_loc" .. loc_id] or quest_template_pre.Objectives
+      local title = title .. "," .. string.sub((objectives or ""), 1, 10)
+      print("    [\"pre\"] = \"" .. sanitize(title) .. "\",")
+    end
   end
 
   if quest_template.NextQuestInChain and quest_template.NextQuestInChain ~= "0" then
     print("    [\"next\"] = " .. quest_template.NextQuestInChain .. ",")
   end
-  ]]--
 
   if quest_template.Details and quest_template.Details ~= "" then
     print("    [\"log\"] = \"" .. sanitize(details) .. "\",")

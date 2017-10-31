@@ -93,6 +93,12 @@ local function UpdateQuestLogID(questIndex, action)
     local watched = IsQuestWatched(questIndex)
     if not title then return end
 
+    -- read questtext and objectives
+    local oldID = GetQuestLogSelection()
+    SelectQuestLogEntry(questIndex)
+    local qtxt, qobj = GetQuestLogQuestText()
+    SelectQuestLogEntry(oldID)
+
     if action == "REMOVE" or
     ( not action and not watched and pfQuest_config["trackingmethod"] == 2 ) or
     ( not action and pfQuest_config["trackingmethod"] == 3 ) then
@@ -143,14 +149,14 @@ local function UpdateQuestLogID(questIndex, action)
 
     -- show quest givers
     if pfQuest_config["currentquestgivers"] ==  "1" then
-
-      if complete then
+      if complete or objectives == 0 then
         meta.qstate = "done"
       else
         meta.qstate = "progress"
       end
 
-      zone, score = pfDatabase:SearchQuest(title, meta)
+      local questIndex = title .. "," .. string.sub(qobj, 1, 10)
+      zone, score = pfDatabase:SearchQuest(questIndex, meta)
       if zone then maps[zone] = maps[zone] and maps[zone] + score or 1 end
     end
 
@@ -337,6 +343,7 @@ end
 pfQuest = CreateFrame("Frame")
 pfQuest:RegisterEvent("QUEST_LOG_UPDATE")
 pfQuest:RegisterEvent("QUEST_WATCH_UPDATE")
+pfQuest:RegisterEvent("PLAYER_LEVEL_UP")
 pfQuest:RegisterEvent("ADDON_LOADED")
 
 pfQuest:SetScript("OnEvent", function()
@@ -356,8 +363,11 @@ pfQuest:SetScript("OnEvent", function()
     -- never update in manual and hidden mode
     if pfQuest_config["trackingmethod"] == 3 then return end
     if pfQuest_config["trackingmethod"] == 4 then return end
-
-    UpdateQuestLogID(arg1)
+    if event == "PLAYER_LEVEL_UP" then
+      UpdateQuestLogID(nil)
+    else
+      UpdateQuestLogID(arg1)
+    end
   end
 end)
 

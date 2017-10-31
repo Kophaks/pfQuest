@@ -264,13 +264,23 @@ end
 function pfDatabase:SearchQuest(quest, meta)
   local maps = {}
 
+  if not quests[quest] then
+    local qname = nil
+    for name, tab in pairs(quests) do
+      local f, t, questname, _ = strfind(name, "(.*),.*")
+      if questname == quest then
+        quest = name
+      end
+    end
+  end
+
   if quests[quest] then
     if quests[quest]["start"] then
       for questGiver, field in pairs(quests[quest]["start"]) do
         local objectType = field
 
         meta = meta or {}
-        meta["quest"] = quest
+        _, _, meta["quest"] = strfind(quest, "(.*),.*")
 
         if quests[quest]["end"][questGiver] then
           if meta["qstate"] == "progress" then
@@ -292,7 +302,7 @@ function pfDatabase:SearchQuest(quest, meta)
         local objectType = field
 
         meta = meta or {}
-        meta["quest"] = quest
+        _, _, meta["quest"] = strfind(quest, "(.*),.*")
 
         if quests[quest]["start"][questGiver] then
           if meta["qstate"] == "progress" then
@@ -301,7 +311,7 @@ function pfDatabase:SearchQuest(quest, meta)
             meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\startend"
           end
         else
-          if meta["qstate"] == "done" then
+          if meta["qstate"] == "done" or meta["dbobj"] then
             meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\complete_c"
           else
             meta["texture"] = "Interface\\AddOns\\pfQuest\\img\\complete"
@@ -310,6 +320,32 @@ function pfDatabase:SearchQuest(quest, meta)
 
         local zone, score = pfDatabase:SearchMob(questGiver, meta)
         if zone then maps[zone] = maps[zone] and maps[zone] + score or 1 end
+      end
+    end
+
+    -- query database objects
+    if meta["dbobj"] then
+      meta["texture"] = nil
+
+      -- spawns
+      if quests[quest]["spawn"] then
+        for mob in pairs(quests[quest]["spawn"]) do
+          local _, _, mob = strfind(mob, "(.*),.*")
+          zone, score = pfDatabase:SearchMob(mob, meta)
+          if zone then maps[zone] = maps[zone] and maps[zone] + score or 1 end
+        end
+      end
+
+      -- items
+      if quests[quest]["item"] then
+        for item in pairs(quests[quest]["item"]) do
+          local _, _, item = strfind(item, "(.*),.*")
+          zone, score = pfDatabase:SearchItem(item, meta)
+          if zone then maps[zone] = maps[zone] and maps[zone] + score or 1 end
+
+          zone, score = pfDatabase:SearchVendor(item, meta)
+          if zone then maps[zone] = maps[zone] and maps[zone] + score or 1 end
+        end
       end
     end
 
@@ -342,7 +378,7 @@ function pfDatabase:SearchQuests(zone, meta)
       if spawns[questgiver] and strfind(spawns[questgiver]["faction"], faction) then
 
         meta = meta or {}
-        meta["quest"] = title
+        _, _, meta["quest"] = strfind(title, "(.*),.*")
         meta["qlvl"] = quests[title]["lvl"]
         meta["qmin"] = quests[title]["min"]
 
@@ -352,8 +388,11 @@ function pfDatabase:SearchQuests(zone, meta)
           meta["addon"] = "PFQUEST"
           meta["vertex"] = { 0, 0, 0 }
 
-          if pfQuest_history[title] then
+          if pfQuest_history[meta["quest"]] then
             break
+          elseif quests[title]["pre"] then
+            _, _, pre = strfind(quests[title]["pre"], "(.*),.*")
+            if not pfQuest_history[pre] then break end
           elseif quests[title]["lvl"] and quests[title]["lvl"] > level + 10 then
             break
           elseif quests[title]["min"] and quests[title]["min"] > level + 2 then
